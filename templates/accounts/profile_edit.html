@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Edit Profile - ResumeHero AI{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="glass-card animate-fade-in">
+            <h2 class="text-white mb-4">Edit Profile</h2>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_first_name" class="form-label form-label-custom">First Name</label>
+                            {{ u_form.first_name }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_last_name" class="form-label form-label-custom">Last Name</label>
+                            {{ u_form.last_name }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_email" class="form-label form-label-custom">Email Address</label>
+                            {{ u_form.email }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_phone" class="form-label form-label-custom">Phone Number</label>
+                            {{ p_form.phone }}
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="id_avatar" class="form-label form-label-custom">Profile Picture</label>
+                    <div class="d-flex align-items-center gap-3">
+                        {% if user.profile.avatar %}
+                            <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="rounded-circle border border-primary" style="width: 50px; height: 50px; object-fit: cover;">
+                        {% endif %}
+                        {{ p_form.avatar }}
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="id_bio" class="form-label form-label-custom">Professional Bio</label>
+                    {{ p_form.bio }}
+                </div>
+                <div class="d-flex justify-content-end gap-3">
+                    <button type="submit" class="btn btn-primary-custom">Save Changes</button>
+                    <a href="{% url 'profile' %}" class="btn btn-outline-custom">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
