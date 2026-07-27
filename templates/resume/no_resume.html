@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Builder - ResumeHero AI{% endblock %}
+{% block content %}
+<div class="row justify-content-center py-5 animate-fade-in">
+    <div class="col-md-6 text-center">
+        <div class="glass-card py-5">
+            <div class="d-inline-flex p-4 rounded-circle bg-primary bg-opacity-10 text-primary mb-4 border border-primary border-opacity-20">
+                <i class="bi bi-file-earmark-plus" style="font-size: 3rem;"></i>
+            </div>
+            <h3 class="text-white mb-3">No Active Resume Found</h3>
+            <p class="text-muted mb-4 px-3">
+                Initialize a professional resume template first to begin building your custom career history.
+            </p>
+            <form action="{% url 'create_resume' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary-custom btn-lg px-5">
+                    <i class="bi bi-plus-circle-fill"></i> Create Resume
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
