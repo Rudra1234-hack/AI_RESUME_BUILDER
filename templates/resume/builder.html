@@ -1,0 +1,659 @@
+{% extends 'base.html' %}
+{% block title %}Resume Builder - ResumeHero.ai{% endblock %}
+{% block content %}
+<div class="row g-4">
+    <!-- Left Sidebar: Progress Indicator -->
+    <div class="col-lg-3">
+        <div class="glass-card sticky-top border border-secondary border-opacity-10" style="top: 100px; z-index: 10;">
+            <h5 class="text-white mb-3 fw-bold" style="font-family: 'Space Grotesk', sans-serif;">Resume Wizard</h5>
+            <div class="d-flex flex-column gap-2" id="sidebar-steps">
+                <button onclick="goToStep(1)" class="btn btn-outline-custom text-start active-step-btn w-100" id="side-step-1"><i class="bi bi-person me-2"></i>1. Personal Info</button>
+                <button onclick="goToStep(2)" class="btn btn-outline-custom text-start w-100" id="side-step-2"><i class="bi bi-bullseye me-2"></i>2. Objective</button>
+                <button onclick="goToStep(3)" class="btn btn-outline-custom text-start w-100" id="side-step-3"><i class="bi bi-book me-2"></i>3. Education</button>
+                <button onclick="goToStep(4)" class="btn btn-outline-custom text-start w-100" id="side-step-4"><i class="bi bi-check2-circle me-2"></i>4. Skills</button>
+                <button onclick="goToStep(5)" class="btn btn-outline-custom text-start w-100" id="side-step-5"><i class="bi bi-code-slash me-2"></i>5. Projects</button>
+                <button onclick="goToStep(6)" class="btn btn-outline-custom text-start w-100" id="side-step-6"><i class="bi bi-briefcase me-2"></i>6. Experience</button>
+                <button onclick="goToStep(7)" class="btn btn-outline-custom text-start w-100" id="side-step-7"><i class="bi bi-patch-check me-2"></i>7. Certifications</button>
+                <button onclick="goToStep(8)" class="btn btn-outline-custom text-start w-100" id="side-step-8"><i class="bi bi-translate me-2"></i>8. Languages</button>
+            </div>
+            
+            <div class="mt-4 pt-4 border-top border-secondary border-opacity-10">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small">ATS Score</span>
+                    <span class="text-white fw-bold" id="sidebar-ats-score">0/100</span>
+                </div>
+                <div class="progress" style="height: 6px; background-color: rgba(255,255,255,0.05);">
+                    <div class="progress-bar progress-bar-custom" id="sidebar-ats-progress" style="width: 0%;"></div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3 text-muted small">
+                    <span id="save-status"><i class="bi bi-cloud-check text-success"></i> Auto-saved</span>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2 mt-4">
+                <a href="{% url 'resume_preview' resume.id %}" target="_blank" class="btn btn-outline-custom w-100 d-flex align-items-center justify-content-center gap-2">
+                    <i class="bi bi-eye"></i> Live Preview
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Builder Panel -->
+    <div class="col-lg-9">
+        <div class="glass-card border border-secondary border-opacity-10">
+            <form id="resume-master-form" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- STEP 1: Personal Info -->
+                <div class="wizard-step active" id="step-1">
+                    <h3 class="text-white mb-4 fw-bold" style="font-family: 'Space Grotesk', sans-serif;">Personal Information</h3>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label form-label-custom">Full Name</label>
+                            {{ resume_form.full_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label form-label-custom">Email Address</label>
+                            {{ resume_form.email }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label form-label-custom">Phone Number</label>
+                            {{ resume_form.phone }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label form-label-custom">Profile Photo (Optional)</label>
+                            {{ resume_form.photo }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label form-label-custom">Address</label>
+                            {{ resume_form.address }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label form-label-custom">LinkedIn URL</label>
+                            {{ resume_form.linkedin }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label form-label-custom">GitHub URL</label>
+                            {{ resume_form.github }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label form-label-custom">Portfolio URL</label>
+                            {{ resume_form.portfolio }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Objective -->
+                <div class="wizard-step" id="step-2">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="text-white mb-0 fw-bold" style="font-family: 'Space Grotesk', sans-serif;">Career Objective</h3>
+                        <button type="button" onclick="improveField('id_resume_objective', 'objective')" class="btn btn-primary-custom btn-sm d-flex align-items-center gap-1">
+                            <i class="bi bi-stars"></i> Improve with AI
+                        </button>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label form-label-custom">Write a professional summary or career objective</label>
+                        {{ resume_form.objective }}
+                    </div>
+                </div>
+            </form>
+
+            <!-- STEP 3: Education (Dynamic Addition) -->
+            <div class="wizard-step" id="step-3">
+                <h3 class="text-white mb-4 fw-bold" style="font-family: 'Space Grotesk', sans-serif;">Education</h3>
+                
+                <!-- Existing Education Table -->
+                <div class="table-responsive mb-4">
+                    <table class="table table-dark table-hover" id="education-table" style="background: rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden;">
+                        <thead>
+                            <tr class="border-bottom border-secondary border-opacity-10">
+                                <th class="py-3 px-4">College</th>
+                                <th class="py-3">Degree</th>
+                                <th class="py-3">Branch</th>
+                                <th class="py-3">CGPA/Score</th>
+                                <th class="py-3">Passing Year</th>
+                                <th class="py-3 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="education-list">
+                            {% for edu in educations %}
+                                <tr id="education-row-{{ edu.id }}" class="border-bottom border-secondary border-opacity-5">
+                                    <td class="py-3 px-4 text-white">{{ edu.college }}</td>
+                                    <td class="py-3 text-secondary">{{ edu.degree }}</td>
+                                    <td class="py-3 text-secondary">{{ edu.branch }}</td>
+                                    <td class="py-3 text-secondary">{{ edu.cgpa }}</td>
+                                    <td class="py-3 text-secondary">{{ edu.passing_year }}</td>
+                                    <td class="py-3 text-center">
+                                        <button onclick="deleteItem({{ edu.id }}, 'education')" class="btn btn-outline-danger btn-sm border-0">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Add Education Form -->
+                <div class="p-4 rounded border border-secondary border-opacity-10 mb-3" style="background: rgba(255,255,255,0.015);">
+                    <h5 class="text-white mb-4 fw-semibold"><i class="bi bi-plus-circle-fill text-primary me-2"></i>Add Educational Qualification</h5>
+                    <form id="education-form">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label form-label-custom">College / School</label>
+                                {{ education_form.college }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label form-label-custom">Degree</label>
+                                {{ education_form.degree }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label form-label-custom">Branch / Stream</label>
+                                {{ education_form.branch }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label form-label-custom">CGPA / Percentage</label>
+                                {{ education_form.cgpa }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label form-label-custom">Passing Year</label>
+                                {{ education_form.passing_year }}
+                            </div>
+                        </div>
+                        <button type="button" onclick="submitItem('education')" class="btn btn-primary-custom mt-4">Add Education</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- STEP 4: Skills -->
+            <div class="wizard-step" id="step-4">
+                <h3 class="text-white mb-4 fw-bold" style="font-family: 'Space Grotesk', sans-serif;">Skills</h3>
+                
+                <!-- Existing Skills List -->
+                <div class="mb-4 d-flex flex-wrap gap-2" id="skills-list">
+                    {% for skill in skills %}
+                        <div class="badge bg-secondary bg-opacity-20 text-secondary border border-secondary border-opacity-30 p-2.5 d-inline-flex align-items-center gap-2" id="skill-{{ skill.id }}" style="font-size:0.85rem; border-radius:8px;">
+                            {{ skill.name }} ({{ skill.get_category_display }})
+                            <i onclick="deleteItem({{ skill.id }}, 'skill')" class="bi bi-x-circle text-danger pointer-cursor" style="cursor:pointer; font-size:1rem;"></i>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Add Skill Form -->
+                <div class="p-4 rounded border border-secondary border-opacity-10 mb-3" style="background: rgba(255,255,255,0.015);">
+                    <h5 class="text-white mb-4 fw-semibold"><i class="bi bi-plus-circle-fill text-primary me-2"></i>Add Skill</h5>
+                    <form id="skill-form">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label form-label-custom">Skill Category</label>
+                                {{ skill_form.category }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label form-label-custom">Skill Name</label>
+                                {{ skill_form.name }}
+                            </div>
+                        </div>
+                        <button type="button" onclick="submitItem('skill')" class="btn btn-primary-custom mt-4">Add Skill</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- STEP 5: Projects -->
+            <div class="wizard-step" id="step-5">
+                <h3 class="text-white mb-4 fw-bold" style="font-family: 'Space Grotesk', sans-serif;">Projects</h3>
+                
+                <!-- Existing Projects List -->
+                <div class="mb-4" id="projects-list">
+                    {% for proj in projects %}
+                        <div class="p-3 rounded mb-3 border border-secondary border-opacity-10 d-flex justify-content-between align-items-start" id="project-{{ proj.id }}" style="background:rgba(255,255,255,0.01); transition: var(--transition);">
+                            <div>
+                                <h6 class="text-white fw-bold mb-1">{{ proj.name }}</h6>
+                                <p class="text-muted small mb-2"><i class="bi bi-cpu text-primary me-1"></i> Technologies: {{ proj.technologies }}</p>
+                                <p class="text-secondary small mb-0">{{ proj.description }}</p>
+                            </div>
+                            <button onclick="deleteItem({{ proj.id }}, 'project')" class="btn btn-outline-danger btn-sm border-0"><i class="bi bi-trash"></i></button>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Add Project Form -->
+                <div class="p-4 rounded border border-secondary border-opacity-10 mb-3" style="background: rgba(255,255,255,0.015);">
+                    <h5 class="text-white mb-4 fw-semibold"><i class="bi bi-plus-circle-fill text-primary me-2"></i>Add Project</h5>
+                    <form id="project-form">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label form-label-custom">Project Name</label>
+                            {{ project_form.name }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label form-label-custom">Technologies Used</label>
+                            {{ project_form.technologies }}
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label form-label-custom">Project Description</label>
+                                <button type="button" onclick="improveField('id_project_description', 'project')" class="btn btn-primary-custom btn-sm py-1 px-2.5 d-flex align-items-center gap-1" style="font-size:0.75rem;">
+                                    <i class="bi bi-stars"></i> Improve Description
+                                </button>
+                            </div>
+                            {{ project_form.description }}
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label form-label-custom">GitHub Link</label>
+                                {{ project_form.github }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label form-label-custom">Live URL (Optional)</label>
+                                {{ project_form.live_link }}
+                            </div>
+                        </div>
+                        <button type="button" onclick="submitItem('project')" class="btn btn-primary-custom mt-2">Add Project</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- STEP 6: Experience -->
+            <div class="wizard-step" id="step-6">
+                <h3 class="text-white mb-4 fw-bold" style="font-family: 'Space Grotesk', sans-serif;">Professional Experience</h3>
+                
+                <!-- Existing Experiences List -->
+                <div class="mb-4" id="experiences-list">
+                    {% for exp in experiences %}
+                        <div class="p-3 rounded mb-3 border border-secondary border-opacity-10 d-flex justify-content-between align-items-start" id="experience-{{ exp.id }}" style="background:rgba(255,255,255,0.01);">
+                            <div>
+                                <h6 class="text-white fw-bold mb-1">{{ exp.role }} at {{ exp.company }}</h6>
+                                <p class="text-muted small mb-2"><i class="bi bi-calendar3 text-primary me-1"></i> Duration: {{ exp.duration }}</p>
+                                <p class="text-secondary small mb-0">{{ exp.description }}</p>
+                            </div>
+                            <button onclick="deleteItem({{ exp.id }}, 'experience')" class="btn btn-outline-danger btn-sm border-0"><i class="bi bi-trash"></i></button>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Add Experience Form -->
+                <div class="p-4 rounded border border-secondary border-opacity-10 mb-3" style="background: rgba(255,255,255,0.015);">
+                    <h5 class="text-white mb-4 fw-semibold"><i class="bi bi-plus-circle-fill text-primary me-2"></i>Add Work Experience</h5>
+                    <form id="experience-form">
+                        {% csrf_token %}
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label form-label-custom">Company</label>
+                                {{ experience_form.company }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label form-label-custom">Role</label>
+                                {{ experience_form.role }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label form-label-custom">Duration</label>
+                            {{ experience_form.duration }}
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label form-label-custom">Job Description</label>
+                                <button type="button" onclick="improveField('id_exp_description', 'experience')" class="btn btn-primary-custom btn-sm py-1 px-2.5 d-flex align-items-center gap-1" style="font-size:0.75rem;">
+                                    <i class="bi bi-stars"></i> Improve Description
+                                </button>
+                            </div>
+                            {{ experience_form.description }}
+                        </div>
+                        <button type="button" onclick="submitItem('experience')" class="btn btn-primary-custom mt-2">Add Experience</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- STEP 7: Certifications -->
+            <div class="wizard-step" id="step-7">
+                <h3 class="text-white mb-4 fw-bold" style="font-family: 'Space Grotesk', sans-serif;">Certifications</h3>
+                
+                <!-- Existing Certifications -->
+                <div class="mb-4" id="certificates-list">
+                    {% for cert in certificates %}
+                        <div class="p-3 rounded mb-2 border border-secondary border-opacity-10 d-flex justify-content-between align-items-center" id="certificate-{{ cert.id }}" style="background:rgba(255,255,255,0.01);">
+                            <span class="text-white fw-medium"><i class="bi bi-award text-success me-2"></i> {{ cert.name }} - {{ cert.organization }} ({{ cert.year }})</span>
+                            <button onclick="deleteItem({{ cert.id }}, 'certificate')" class="btn btn-outline-danger btn-sm border-0"><i class="bi bi-trash"></i></button>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Add Certificate Form -->
+                <div class="p-4 rounded border border-secondary border-opacity-10 mb-3" style="background: rgba(255,255,255,0.015);">
+                    <h5 class="text-white mb-4 fw-semibold"><i class="bi bi-plus-circle-fill text-primary me-2"></i>Add Certification</h5>
+                    <form id="certificate-form">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label class="form-label form-label-custom">Certification Name</label>
+                                {{ certificate_form.name }}
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label form-label-custom">Issuing Organization</label>
+                                {{ certificate_form.organization }}
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label form-label-custom">Year</label>
+                                {{ certificate_form.year }}
+                            </div>
+                        </div>
+                        <button type="button" onclick="submitItem('certificate')" class="btn btn-primary-custom mt-4">Add Certificate</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- STEP 8: Languages -->
+            <div class="wizard-step" id="step-8">
+                <h3 class="text-white mb-4 fw-bold" style="font-family: 'Space Grotesk', sans-serif;">Languages</h3>
+                
+                <!-- Existing Languages -->
+                <div class="mb-4 d-flex flex-wrap gap-2" id="languages-list">
+                    {% for lang in languages %}
+                        <div class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-20 p-2.5 d-inline-flex align-items-center gap-2" id="language-{{ lang.id }}" style="font-size:0.85rem; border-radius:8px;">
+                            {{ lang.language }}
+                            <i onclick="deleteItem({{ lang.id }}, 'language')" class="bi bi-x-circle text-danger pointer-cursor" style="cursor:pointer; font-size:1rem;"></i>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Add Language Form -->
+                <div class="p-4 rounded border border-secondary border-opacity-10 mb-3" style="background: rgba(255,255,255,0.015);">
+                    <h5 class="text-white mb-4 fw-semibold"><i class="bi bi-plus-circle-fill text-primary me-2"></i>Add Language</h5>
+                    <form id="language-form">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label form-label-custom">Language Name</label>
+                                {{ language_form.language }}
+                            </div>
+                        </div>
+                        <button type="button" onclick="submitItem('language')" class="btn btn-primary-custom mt-4">Add Language</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons inside Panel Footer -->
+            <div class="d-flex justify-content-between mt-5 pt-3 border-top border-secondary border-opacity-10 animate-fade-in">
+                <button type="button" class="btn btn-outline-custom px-4" id="prev-btn" onclick="nextPrevStep(-1)">Back</button>
+                <button type="button" class="btn btn-primary-custom px-4" id="next-btn" onclick="nextPrevStep(1)">Next Section</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.active-step-btn {
+    background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
+    color: white !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.25);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentStep = 1;
+    const totalSteps = 8;
+    
+    document.addEventListener("DOMContentLoaded", () => {
+        setupAutoSave();
+        updateWizardUI();
+        updateScoreProgress();
+    });
+    
+    function updateWizardUI() {
+        // Toggle steps visibility
+        for (let i = 1; i <= totalSteps; i++) {
+            const stepEl = document.getElementById(`step-${i}`);
+            const sideBtn = document.getElementById(`side-step-${i}`);
+            if (i === currentStep) {
+                stepEl.classList.add("active");
+                sideBtn.classList.add("active-step-btn");
+            } else {
+                stepEl.classList.remove("active");
+                sideBtn.classList.remove("active-step-btn");
+            }
+        }
+        
+        // Disable/enable back and next button
+        document.getElementById("prev-btn").disabled = (currentStep === 1);
+        if (currentStep === totalSteps) {
+            document.getElementById("next-btn").innerHTML = "<i class='bi bi-check-circle-fill'></i> Finish Builder";
+        } else {
+            document.getElementById("next-btn").innerHTML = "Next Section <i class='bi bi-arrow-right-short'></i>";
+        }
+    }
+    
+    function handleStepTransition(targetStep) {
+        // 1. Auto-save the main form first
+        saveFormData();
+        
+        // 2. Auto-submit any partially filled list inputs before leaving the step
+        if (currentStep === 3) {
+            const college = document.getElementById("id_edu_college").value.trim();
+            const degree = document.getElementById("id_edu_degree").value.trim();
+            if (college || degree) submitItem("education");
+        } else if (currentStep === 4) {
+            const name = document.getElementById("id_skill_name").value.trim();
+            if (name) submitItem("skill");
+        } else if (currentStep === 5) {
+            const name = document.getElementById("id_project_name").value.trim();
+            if (name) submitItem("project");
+        } else if (currentStep === 6) {
+            const company = document.getElementById("id_exp_company").value.trim();
+            const role = document.getElementById("id_exp_role").value.trim();
+            if (company || role) submitItem("experience");
+        } else if (currentStep === 7) {
+            const name = document.getElementById("id_cert_name").value.trim();
+            if (name) submitItem("certificate");
+        } else if (currentStep === 8) {
+            const lang = document.getElementById("id_lang_language").value.trim();
+            if (lang) submitItem("language");
+        }
+        
+        currentStep = targetStep;
+        updateWizardUI();
+    }
+
+    function goToStep(step) {
+        handleStepTransition(step);
+    }
+    
+    function nextPrevStep(dir) {
+        if (currentStep === totalSteps && dir === 1) {
+            // Check if final language step has unsubmitted input
+            const lang = document.getElementById("id_lang_language").value.trim();
+            if (lang) submitItem("language");
+            
+            showLoader("Finalizing your resume...");
+            saveFormData(() => {
+                window.location.href = "{% url 'dashboard' %}";
+            });
+            return;
+        }
+        const targetStep = currentStep + dir;
+        if (targetStep >= 1 && targetStep <= totalSteps) {
+            handleStepTransition(targetStep);
+        }
+    }
+    
+    // Auto-save setup
+    function setupAutoSave() {
+        const form = document.getElementById("resume-master-form");
+        const inputs = form.querySelectorAll("input, textarea, select");
+        
+        let typingTimer;
+        const doneTypingInterval = 1000; // Save 1 second after user stops typing
+        
+        inputs.forEach(input => {
+            input.addEventListener("input", () => {
+                clearTimeout(typingTimer);
+                document.getElementById("save-status").innerHTML = "<i class='bi bi-cloud-arrow-up text-warning'></i> Saving changes...";
+                typingTimer = setTimeout(saveFormData, doneTypingInterval);
+            });
+            input.addEventListener("change", () => {
+                clearTimeout(typingTimer);
+                document.getElementById("save-status").innerHTML = "<i class='bi bi-cloud-arrow-up text-warning'></i> Saving changes...";
+                saveFormData();
+            });
+        });
+    }
+    
+    function saveFormData(callback = null) {
+        const form = document.getElementById("resume-master-form");
+        const formData = new FormData(form);
+        
+        fetch("{% url 'auto_save_resume' resume.id %}", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                document.getElementById("save-status").innerHTML = "<i class='bi bi-cloud-check text-success'></i> Auto-saved";
+                document.getElementById("sidebar-ats-score").innerText = data.ats_score + "/100";
+                document.getElementById("sidebar-ats-progress").style.width = data.ats_score + "%";
+            }
+            if (callback) callback();
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById("save-status").innerHTML = "<i class='bi bi-cloud-slash text-danger'></i> Save failed";
+            if (callback) callback();
+        });
+    }
+    
+    // Dynamic Form Submissions (Education, Skills, etc.)
+    function submitItem(type) {
+        showLoader("Adding detail...");
+        const form = document.getElementById(`${type}-form`);
+        const formData = new FormData(form);
+        
+        fetch(`/resume/add-item/${type}/{{ resume.id }}/`, {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            hideLoader();
+            if (data.status === "success") {
+                form.reset();
+                if (type === "education") {
+                    document.getElementById("education-list").insertAdjacentHTML("beforeend", data.html);
+                } else if (type === "skill") {
+                    document.getElementById("skills-list").insertAdjacentHTML("beforeend", data.html);
+                } else if (type === "project") {
+                    document.getElementById("projects-list").insertAdjacentHTML("beforeend", data.html);
+                } else if (type === "experience") {
+                    document.getElementById("experiences-list").insertAdjacentHTML("beforeend", data.html);
+                } else if (type === "certificate") {
+                    document.getElementById("certificates-list").insertAdjacentHTML("beforeend", data.html);
+                } else if (type === "language") {
+                    document.getElementById("languages-list").insertAdjacentHTML("beforeend", data.html);
+                }
+                updateScoreProgress();
+            } else {
+                alert("Failed to add entry. Please check inputs.");
+            }
+        })
+        .catch(err => {
+            hideLoader();
+            console.error(err);
+        });
+    }
+    
+    function deleteItem(id, type) {
+        if (!confirm("Are you sure you want to delete this entry?")) return;
+        showLoader("Deleting entry...");
+        
+        fetch(`/resume/delete-item/${type}/${id}/{{ resume.id }}/`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            hideLoader();
+            if (data.status === "success") {
+                if (type === "education") {
+                    document.getElementById(`education-row-${id}`).remove();
+                } else {
+                    document.getElementById(`${type}-${id}`).remove();
+                }
+                updateScoreProgress();
+            }
+        })
+        .catch(err => {
+            hideLoader();
+            console.error(err);
+        });
+    }
+    
+    function updateScoreProgress() {
+        // Fetches updated ATS score from local calculation
+        fetch("{% url 'auto_save_resume' resume.id %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ats_score !== undefined) {
+                document.getElementById("sidebar-ats-score").innerText = data.ats_score + "/100";
+                document.getElementById("sidebar-ats-progress").style.width = data.ats_score + "%";
+            }
+        });
+    }
+
+    // AI optimization view integration
+    function improveField(fieldId, sectionType) {
+        const inputField = document.getElementById(fieldId);
+        const originalText = inputField.value;
+        if (!originalText.trim()) {
+            alert("Please type some initial text first so the AI can improve it.");
+            return;
+        }
+        
+        showLoader("AI is refining your phrasing...");
+        
+        fetch("{% url 'improve_text' %}", {
+            method: "POST",
+            body: JSON.stringify({
+                text: originalText,
+                section_type: sectionType
+            }),
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            hideLoader();
+            if (data.improved_text) {
+                inputField.value = data.improved_text;
+                // Trigger auto-save immediately
+                saveFormData();
+            } else {
+                alert("AI optimization encountered a problem: " + (data.error || "Unknown error"));
+            }
+        })
+        .catch(err => {
+            hideLoader();
+            console.error(err);
+            alert("Error connecting to the AI Assistant service.");
+        });
+    }
+</script>
+{% endblock %}
