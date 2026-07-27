@@ -1,0 +1,23 @@
+# Compiled python code
+*.pyc
+__pycache__/
+
+# Databases
+db.sqlite3
+
+# Local media / static files
+media/
+staticfiles/
+
+# Environment files
+.env
+env/
+venv/
+ENV/
+
+# IDE / System configurations
+.vscode/
+.idea/
+.gemini/
+.agents/
+.DS_Store
