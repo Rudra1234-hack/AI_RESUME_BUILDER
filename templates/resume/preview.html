@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}Resume Preview - ResumeHero.ai{% endblock %}
+{% block content %}
+<div class="row g-4 animate-fade-in">
+    <!-- Action Panel -->
+    <div class="col-12 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 mb-2">
+        <div>
+            <h2 class="text-white mb-1 fw-bold" style="font-family: 'Space Grotesk', sans-serif;">Resume Preview</h2>
+            <p class="text-muted mb-0">Confirm the layout matches your expectations before downloading the final PDF.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'builder_wizard' resume.id %}" class="btn btn-outline-custom">
+                <i class="bi bi-pencil-square"></i> Edit Sections
+            </a>
+            <a href="{% url 'generate_pdf' resume.id %}" target="_blank" class="btn btn-primary-custom d-flex align-items-center gap-2">
+                <i class="bi bi-download"></i> Download PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Preview Container -->
+    <div class="col-12 d-flex justify-content-center">
+        <div class="resume-preview-container w-100">
+            <!-- A4 Sheet Simulated Layout -->
+            <div class="resume-paper animate-fade-in" id="resume-sheet">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <h1 class="mb-1 fw-bold" style="color: #0f172a; font-family: 'Space Grotesk', Helvetica, Arial, sans-serif; font-size: 24px;">{{ resume.full_name|upper }}</h1>
+                    <div class="text-muted mb-2" style="font-size: 13px;">
+                        {% if resume.email %}{{ resume.email }}{% endif %}
+                        {% if resume.phone %} &nbsp;|&nbsp; {{ resume.phone }}{% endif %}
+                        {% if resume.address %} &nbsp;|&nbsp; {{ resume.address }}{% endif %}
+                    </div>
+                    <div style="font-size: 12px;">
+                        {% if resume.linkedin %}
+                            <a href="{{ resume.linkedin }}" target="_blank" style="color: #3b82f6; text-decoration: none;">LinkedIn</a>
+                        {% endif %}
+                        {% if resume.github %}
+                            &nbsp;|&nbsp; <a href="{{ resume.github }}" target="_blank" style="color: #3b82f6; text-decoration: none;">GitHub</a>
+                        {% endif %}
+                        {% if resume.portfolio %}
+                            &nbsp;|&nbsp; <a href="{{ resume.portfolio }}" target="_blank" style="color: #3b82f6; text-decoration: none;">Portfolio</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Career Objective -->
+                {% if resume.objective %}
+                    <div class="mb-4">
+                        <h2 class="section-title">Career Objective</h2>
+                        <p style="color: #334155; margin-bottom: 0;">{{ resume.objective }}</p>
+                    </div>
+                {% endif %}
+
+                <!-- Work Experience -->
+                {% if experiences %}
+                    <div class="mb-4">
+                        <h2 class="section-title">Professional Experience</h2>
+                        {% for exp in experiences %}
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between fw-bold" style="color: #1e293b;">
+                                    <span>{{ exp.role }}</span>
+                                    <span style="font-weight: normal; color: #475569;">{{ exp.duration }}</span>
+                                </div>
+                                <div class="text-muted mb-1" style="font-size: 13px; font-style: italic;">{{ exp.company }}</div>
+                                <p style="color: #334155; white-space: pre-line; margin-bottom: 0;">{{ exp.description }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Projects -->
+                {% if projects %}
+                    <div class="mb-4">
+                        <h2 class="section-title">Projects</h2>
+                        {% for proj in projects %}
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between fw-bold" style="color: #1e293b;">
+                                    <span>{{ proj.name }} &nbsp;|&nbsp; <small style="font-weight: normal; font-style: italic; color: #475569;">{{ proj.technologies }}</small></span>
+                                    {% if proj.github %}
+                                        <a href="{{ proj.github }}" target="_blank" style="font-weight: normal; font-size: 13px; color: #3b82f6; text-decoration: none;">Code</a>
+                                    {% endif %}
+                                </div>
+                                <p style="color: #334155; margin-top: 5px; margin-bottom: 0;">{{ proj.description }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Education -->
+                {% if educations %}
+                    <div class="mb-4">
+                        <h2 class="section-title">Education</h2>
+                        {% for edu in educations %}
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between fw-bold" style="color: #1e293b;">
+                                    <span>{{ edu.degree }} {% if edu.branch %}in {{ edu.branch }}{% endif %}</span>
+                                    <span style="font-weight: normal; color: #475569;">{{ edu.passing_year }}</span>
+                                </div>
+                                <div style="color: #334155;">{{ edu.college }} &nbsp;|&nbsp; Score: <strong>{{ edu.cgpa }}</strong></div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Skills -->
+                {% if skills %}
+                    <div class="mb-4">
+                        <h2 class="section-title">Technical Skills</h2>
+                        <div class="row g-2">
+                            <div class="col-12" style="color: #334155;">
+                                <table class="table table-borderless table-sm mb-0" style="color: inherit;">
+                                    <tbody>
+                                        {% regroup skills by category as skill_categories %}
+                                        {% for cat in skill_categories %}
+                                            <tr>
+                                                <td style="width: 180px; font-weight: bold; padding-left: 0; padding-top: 2px; padding-bottom: 2px;">
+                                                    {% if cat.grouper == 'languages' %}Programming Languages
+                                                    {% elif cat.grouper == 'frameworks' %}Frameworks
+                                                    {% elif cat.grouper == 'databases' %}Databases
+                                                    {% elif cat.grouper == 'tools' %}Tools
+                                                    {% else %}Soft Skills{% endif %}:
+                                                </td>
+                                                <td style="padding-top: 2px; padding-bottom: 2px;">
+                                                    {% for skill in cat.list %}
+                                                        {{ skill.name }}{% if not forloop.last %}, {% endif %}
+                                                    {% endfor %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Certifications & Languages -->
+                {% if certificates or languages %}
+                    <div class="mb-2">
+                        <h2 class="section-title">Certifications & Languages</h2>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                {% if certificates %}
+                                    <ul style="padding-left: 15px; color: #334155; margin-bottom: 0;">
+                                        {% for cert in certificates %}
+                                            <li>{{ cert.name }} - {{ cert.organization }} ({{ cert.year }})</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            <div class="col-sm-6">
+                                {% if languages %}
+                                    <p style="color: #334155; margin-bottom: 0;">
+                                        <strong>Languages:</strong> 
+                                        {% for lang in languages %}
+                                            {{ lang.language }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
